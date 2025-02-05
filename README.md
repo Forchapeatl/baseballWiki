@@ -40,17 +40,8 @@ The Flask server should now be running locally. Open your browser and go to `htt
 Feel free to fork the repository, make improvements, and create pull requests. If you have any suggestions or find bugs, please open an issue.
 
 ## License
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-```
+This project is licensed under the MIT License - see the [MIT LICENSE](https://opensource.org/license/mit) file for details.
 
----
 
-### **Explanation**:
+THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-- **Project Overview**: The README begins with a brief explanation of the project, what it does, and how it works.
-- **Installation Instructions**: Detailed step-by-step instructions on setting up the environment, installing dependencies, and running the app locally.
-- **Usage**: Simple instructions on how to use the application once it's up and running.
-- **Contributing**: Instructions for others to contribute or submit issues.
-- **License**: Standard section for open-source projects.
-
-Make sure to replace the `git clone` URL with the actual repository URL for your project. Let me know if you need any further help with the setup! 🚀
