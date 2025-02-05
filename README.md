@@ -16,6 +16,9 @@ Make sure you have the **Google Cloud credentials** set:
 ```bash
 export GOOGLE_APPLICATION_CREDENTIALS="/path/to/your/google-credentials.json"
 ```
+Or include directly in app.py
+
+https://github.com/Forchapeatl/baseballWiki/blob/eadac4099b144fd3f094e9e78bdd5b24a0e55dbf/app.py#L38
 
 ### Set up FAISS and LangChain
 1. Ensure you have **FAISS** installed by following the official instructions from [FAISS documentation](https://github.com/facebookresearch/faiss).
