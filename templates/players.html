@@ -1,0 +1,103 @@
+{% for player in players %}
+<div class="col-md-4 mb-4">
+    <div class="card shadow-sm">
+        <img src="{{ player.image_url }}" class="card-img-top" alt="{{ player.name }}">
+        <div class="card-body text-center">
+            <h5 class="card-title">{{ player.name }}</h5>
+            <p class="card-text">{{ player.team }}</p>
+            
+            <!-- Video Play Button -->
+            <button class="btn btn-primary play-video-btn" data-player-id="{{ player.id }}">
+                <i class="fas fa-play-circle"></i> {{ _('Play Video') }}
+            </button>
+            <button class="btn btn-secondary chat-btn" data-player-id="{{ player.id }}" data-player-name="{{ player.name }}">
+                <i class="fas fa-comment-alt"></i> {{ _('Chat with Bot') }}
+            </button>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<!-- Modal for displaying play events -->
+<div class="modal fade" id="videoModal" tabindex="-1" aria-labelledby="videoModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="videoModalLabel">Play Events</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <ul id="play-events-list" class="list-group"></ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        document.querySelectorAll(".play-video-btn").forEach(button => {
+            button.addEventListener("click", function() {
+                const playerId = this.getAttribute("data-player-id");
+                fetch(`/get_play_events?player_id=${playerId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        const playEventsList = document.getElementById("play-events-list");
+                        playEventsList.innerHTML = "";  // Clear previous results
+                        data.forEach(event => {
+                            let li = document.createElement("li");
+                            li.className = "list-group-item";
+                            li.textContent = `${event.playId}: ${event.description}`;
+                            playEventsList.appendChild(li);
+                        });
+                        // Show the modal
+                        new bootstrap.Modal(document.getElementById("videoModal")).show();
+                    })
+                    .catch(error => console.error("Error fetching play events:", error));
+            });
+        });
+
+// Open the chat modal when the Chat button is clicked
+document.querySelectorAll('.chat-btn').forEach(button => {
+    button.addEventListener('click', function() {
+        const playerId = this.getAttribute('data-player-id');
+        const playerName = this.getAttribute('data-player-name');
+
+        // Set the player information in the modal
+        document.getElementById("chatModalLabel").textContent = `Chat with ${playerName}`;
+        openChatModal(playerId); // Open the chat modal with player ID
+    });
+});
+
+function openChatModal(playerId) {
+    // Show the chat modal
+    const chatModal = new bootstrap.Modal(document.getElementById('chatModal'));
+    chatModal.show();
+
+    // Send the player ID to the chatbot to initialize conversation
+    const chatBox = document.getElementById("chat-box");
+    chatBox.innerHTML = `<p><strong>Bot:</strong> How can I assist you with player ID ${playerId}?</p>`;
+
+    document.getElementById("send-btn").onclick = function() {
+        const userInput = document.getElementById("user-input").value;
+
+        if (userInput.trim()) {
+            // Display user input in the chat box
+            chatBox.innerHTML += `<p><strong>You:</strong> ${userInput}</p>`;
+
+            // Call Flask endpoint to get response from the chatbot (pass player ID)
+            fetch(`/chat_with_bot?player_id=${playerId}&question=${encodeURIComponent(userInput)}`)
+                .then(response => response.json())
+                .then(data => {
+                    // Display bot response in chat
+                    chatBox.innerHTML += `<p><strong>Bot:</strong> ${data.answer}</p>`;
+                    document.getElementById("user-input").value = ''; // Clear input field
+                })
+                .catch(error => console.error("Error fetching chatbot response:", error));
+        }
+    };
+}
+
+
+
+    });
+</script>

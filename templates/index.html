@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MLB Player Gallery</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .card {
+            transition: transform 0.2s;
+        }
+        .card:hover {
+            transform: scale(1.05);
+        }
+        video {
+            width: 100%;
+            max-height: 400px;
+        }
+        /* Dropdown Style */
+        select {
+            width: 50px;
+            height: 30px;
+            padding: 5px;
+            font-size: 16px;
+            border: none;
+            background: transparent;
+        }
+
+        option {
+            background-size: contain;
+            background-repeat: no-repeat;
+        }
+
+        option[data-value="es"] {
+            background-image: url('https://upload.wikimedia.org/wikipedia/commons/9/9a/Flag_of_Spain.svg');
+        }
+
+        option[data-value="ja"] {
+            background-image: url('https://upload.wikimedia.org/wikipedia/commons/8/83/Flag_of_Japan.svg');
+        }
+
+        option[data-value="en"] {
+            background-image: url('https://upload.wikimedia.org/wikipedia/commons/a/a4/Flag_of_the_United_States.svg');
+        }
+
+        option {
+            background-color: white;
+        }
+    </style>
+</head>
+<body class="bg-light">
+<select id="language-selector" onchange="changeLanguage()">
+        <option data-value="en" value="en" selected>🇺🇸</option>  <!-- Default to English -->
+        <option data-value="es" value="es">🇪🇸</option>  <!-- Spanish Flag -->
+        <option data-value="ja" value="ja">🇯🇵</option>  <!-- Japanese Flag -->
+    </select>
+
+    <script>
+        function changeLanguage() {
+            const langSelector = document.getElementById('language-selector');
+            const selectedLang = langSelector.value;
+            
+            // Redirect to the appropriate language page
+            window.location.href = `/?lang=${selectedLang}`;
+        }
+    </script>
+    <div class="container mt-5">
+        <h2 class="text-center mb-4">MLB Player Gallery</h2>
+        <div class="row" id="player-container">
+            <!-- Players will be dynamically loaded here -->
+        </div>
+        <div id="loading" class="text-center mt-3" style="display: none;">
+            <img src="https://cdn.dribbble.com/users/463847/screenshots/2818563/mlb_logo.gif" width="50">
+            <p>{{ _('Loading more players') }}</p>
+        </div>
+    </div>
+
+    <!-- Modal for displaying play events -->
+    <div class="modal fade" id="videoModal" tabindex="-1" aria-labelledby="videoModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="videoModalLabel">{{ _('Play Events') }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <ul id="play-events-list" class="list-group"></ul>
+                    <!-- Placeholder for video -->
+                    <div id="video-container" class="mt-3" style="display: none;">
+                        <video id="play-video" controls>
+                            <source id="video-source" type="video/mp4">
+                                Your browser does not support the video tag.
+                            </video>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal for Chatbot -->
+        <div class="modal fade" id="chatModal" tabindex="-1" aria-labelledby="chatModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="chatModalLabel">Chat with Bot</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="chat-container">
+                            <div id="chat-box" class="mb-3" style="height: 300px; overflow-y: auto;"></div>
+                            <textarea id="user-input" class="form-control" placeholder="Ask about the player..." rows="2"></textarea>
+                            <button id="send-btn" class="btn btn-primary mt-2">Send</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- Bootstrap JS -->
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+        <script>
+            let offset = 0;
+            let isLoading = false;
+
+            function loadPlayers() {
+                if (isLoading) return;
+                isLoading = true;
+
+                document.getElementById("loading").style.display = "block"; 
+
+                fetch(`/load_players?offset=${offset}`)
+                .then(response => response.text()) 
+                .then(html => {
+                    if (!html.trim()) return;
+
+                    const container = document.getElementById("player-container");
+                    container.insertAdjacentHTML("beforeend", html);
+
+                    offset += 10;
+                    isLoading = false;
+                    document.getElementById("loading").style.display = "none";
+
+                    // Attach event listeners to newly loaded content
+                    attachPlayVideoEvents();
+                    attachChatbot();
+                })
+                .catch(error => {
+                    console.error("Error loading players:", error);
+                    isLoading = false;
+                    document.getElementById("loading").style.display = "none";
+                });
+            }
+
+            function attachPlayVideoEvents() {
+                document.querySelectorAll(".play-video-btn").forEach(button => {
+                    button.addEventListener("click", function() {
+                        const playerId = this.getAttribute("data-player-id");
+                        fetch(`/get_play_events?player_id=${playerId}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            const playEventsList = document.getElementById("play-events-list");
+                            playEventsList.innerHTML = "";  
+                            if (data.error) {
+                                playEventsList.innerHTML = `<li class="list-group-item text-danger">${data.error}</li>`;
+                            } else {
+                                data.forEach(event => {
+                                    let li = document.createElement("li");
+                                    li.className = "list-group-item";
+                                    li.textContent = `${event.playId}: ${event.description}`;
+                                    li.addEventListener("click", () => loadVideo(event.playId));  // Video load on click
+                                    playEventsList.appendChild(li);
+                                });
+                            }
+                            new bootstrap.Modal(document.getElementById("videoModal")).show();
+                        })
+                        .catch(error => console.error("Error fetching play events:", error));
+                    });
+                });
+            }
+
+        // Fetch and display the video for a specific play ID
+            function loadVideo(playId) {
+                console.log("Fetching video for play ID:", playId);
+
+            // Fetch the video URL for the given play ID
+                fetch(`/get_video_url?play_id=${playId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.video_url) {
+                        const videoContainer = document.getElementById("video-container");
+                        const videoSource = document.getElementById("video-source");
+                        const playVideo = document.getElementById("play-video");
+
+                        videoSource.src = data.video_url;  // Set video source
+                        playVideo.load();  // Reload the video element to apply new source
+                        videoContainer.style.display = "block";  // Show video container
+                    }
+                })
+                .catch(error => {
+                    console.error("Error fetching video:", error);
+                });
+            }
+
+            function attachChatbot(){
+    // Open the chat modal when the Chat button is clicked
+                document.querySelectorAll('.chat-btn').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const playerId = this.getAttribute('data-player-id');
+                        const playerName = this.getAttribute('data-player-name');
+
+            // Set the player information in the modal
+                        document.getElementById("chatModalLabel").textContent = `Chat with ${playerName}`;
+            openChatModal(playerName); // Open the chat modal with player ID
+        });
+                });
+            }
+            function openChatModal(playerName) {
+        // Show the chat modal
+                const chatModal = new bootstrap.Modal(document.getElementById('chatModal'));
+                chatModal.show();
+    const userLanguage = navigator.language || navigator.userLanguage; // Get browser language
+    let botGreeting;
+        // Send the player ID to the chatbot to initialize conversation
+    const chatBox = document.getElementById("chat-box");
+    if (userLanguage.startsWith('es')) {
+        chatBox.innerHTML = `<p><strong>Bot:</strong> ¿Cómo puedo ayudarte con ${playerName}?</p>`;
+
+    } else if (userLanguage.startsWith('ja')) {
+        chatBox.innerHTML = `<p><strong>Bot:</strong> ${playerName}さん、どのようにお手伝いできますか？</p>`;
+
+    }else{
+
+        chatBox.innerHTML = `<p><strong>Bot:</strong> How can I assist you with ${playerName}?</p>`;
+    }
+    document.getElementById("send-btn").onclick = function() {
+        const userInput = document.getElementById("user-input").value;
+
+        if (userInput.trim()) {
+                // Display user input in the chat box
+            chatBox.innerHTML += `<p><strong>You:</strong> ${userInput}</p>`;
+
+                // Call Flask endpoint to get response from the chatbot (pass player ID)
+            fetch(`/chat_with_bot?player_name=${playerName}&question=${encodeURIComponent(userInput)}`)
+            .then(response => response.json())
+            .then(data => {
+                        // Display bot response in chat
+                chatBox.innerHTML += `<p><strong>Bot:</strong> ${data.answer}</p>`;
+                        document.getElementById("user-input").value = ''; // Clear input field
+                    })
+            .catch(error => console.error("Error fetching chatbot response:", error));
+        }
+    };
+}
+
+loadPlayers();
+
+window.addEventListener("scroll", function() {
+    if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 100) {
+        loadPlayers();
+    }
+});
+
+
+</script>
+</body>
+</html>
